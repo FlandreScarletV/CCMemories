@@ -11,4 +11,6 @@ node_modules/
 session_index.jsonl
 sessions/
 archived_sessions/
+*.md
+!/README.md
 

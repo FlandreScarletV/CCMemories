@@ -85,7 +85,9 @@ Work Conversation 会从这些数据中查找、搜索和读取工作会话。
 如果要指定 Tunnel 客户端位置，运行：
 
 ```powershell
-.\connect-tunnel.ps1 -TunnelClient "D:\path\to\tunnel-client.exe" -CodexDataRoot "D:\path\to\codex-data"
+$tunnelClient = Read-Host '请输入 tunnel-client.exe 的完整路径'
+$codexDataRoot = Read-Host '请输入 Codex 数据目录'
+.\connect-tunnel.ps1 -TunnelClient $tunnelClient -CodexDataRoot $codexDataRoot
 ```
 
 通过 Tunnel 客户端的 doctor 配置诊断后，API key 会使用当前 Windows 用户的 DPAPI 加密保存，且只保存在你的电脑上。
@@ -147,3 +149,15 @@ MIT License permission notice
 ## 📌 其他说明
 
 提交 Issue 或 Pull Request 前，请确保不包含 **.runtime**、不包含 **API key**、不包含 **Tunnel ID**、不包含**会话 JSONL**、不包含**个人敏感信息**、不包含**其他用户的聊天记录**、不提交**未经授权的第三方代码**或**资源**。
+
+## 更新说明
+
+- 2026-10-10：新增本地文件和文档的只读读取功能。
+
+| 工具 | 作用 |
+| --- | --- |
+| `list_local_files` | 列出允许读取的目录和文件 |
+| `search_local_files` | 按文件名或文本内容搜索文件 |
+| `read_local_file` | 读取文件内容，支持分页读取 |
+
+你需要通过 `configure-file-access.ps1` 来配置ChatGPT可读的目录；文档解析依赖需要通过 `install-file-parsers.ps1` 来安装。

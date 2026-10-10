@@ -2,6 +2,7 @@ import { createReadStream, existsSync, readdirSync, readFileSync, realpathSync, 
 import { createInterface } from 'node:readline';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fileTools, handleFileTool } from './local-files.mjs';
 
 const configuredRoot = process.env.CODEX_CONVERSATION_ROOT || process.env.CODEX_HOME;
 if (!configuredRoot) throw new Error('Set CODEX_HOME or CODEX_CONVERSATION_ROOT to the Codex data directory');
@@ -159,21 +160,23 @@ const readOnly = { readOnlyHint: true, destructiveHint: false };
 const tools = [
   { name: 'list_work_threads', description: 'List recent local Codex tasks by title and date.',
     inputSchema: { type: 'object', properties: { limit: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false }, annotations: readOnly },
-  { name: 'search_work_threads', description: 'Find local Codex tasks by approximate title. Natural requests containing a topic keyword can match titles containing that keyword. If needsSelection is true, show the candidate titles and dates and ask the user which task to read before calling read_work_thread.',
+  { name: 'search_work_threads', description: 'Find local Codex tasks by approximate title or topic keywords. If needsSelection is true, show the candidate titles and dates and ask the user which task to read before calling read_work_thread.',
     inputSchema: { type: 'object', properties: { query: { type: 'string', minLength: 1 }, limit: { type: 'integer', minimum: 1, maximum: 50 } }, required: ['query'], additionalProperties: false }, annotations: readOnly },
   { name: 'search_work_messages', description: 'Find local Codex tasks containing a phrase in user or assistant conversation text; returns short excerpts.',
     inputSchema: { type: 'object', properties: { query: { type: 'string', minLength: 2 }, limit: { type: 'integer', minimum: 1, maximum: 20 } }, required: ['query'], additionalProperties: false }, annotations: readOnly },
   { name: 'read_work_thread', description: 'Read user and assistant messages from one local Codex task. For “继续读取工作会话”, “继续读取…”, or “读取上一个工作会话”, reuse the task already selected in this chat. “上一个” means the most recently selected/read task here, not the newest task on disk. If several targets remain plausible, ask which one. Pass nextCursor to continue toward older messages; otherwise read the latest messages for new work.',
     inputSchema: { type: 'object', properties: { threadId: { type: 'string' }, cursor: { type: 'integer', minimum: 0 }, messageLimit: { type: 'integer', minimum: 1, maximum: 20 } }, required: ['threadId'], additionalProperties: false }, annotations: readOnly },
+  ...fileTools,
 ];
 
 export async function handle({ method, params = {} }) {
   if (method === 'initialize') return { protocolVersion: '2024-11-05', capabilities: { tools: {} },
-    serverInfo: { name: 'work-conversation', version: '0.1.0' } };
+    serverInfo: { name: 'work-conversation', version: '0.2.0' } };
   if (method === 'ping') return {};
   if (method === 'tools/list') return { tools };
   if (method !== 'tools/call') throw fault('Unsupported method', -32601);
   const { name, arguments: args = {} } = params;
+  if (fileTools.some(tool => tool.name === name)) return handleFileTool(name, args);
   if (name === 'list_work_threads' || name === 'search_work_threads') {
     if (name === 'search_work_threads' && (typeof args.query !== 'string' || !args.query.trim()))
       throw fault('query is required');

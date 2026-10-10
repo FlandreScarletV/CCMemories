@@ -65,6 +65,7 @@ if (-not (Test-Path -LiteralPath $profile)) {
 }
 
 $previousRoot = $env:CODEX_CONVERSATION_ROOT
+$previousFileConfig = $env:WORK_CONVERSATION_FILE_CONFIG
 $previousTemp = $env:TEMP
 $previousTmp = $env:TMP
 $hadKey = Test-Path Env:CONTROL_PLANE_API_KEY
@@ -74,6 +75,7 @@ $saveAfterDoctor = $false
 $secretPointer = [IntPtr]::Zero
 try {
     $env:CODEX_CONVERSATION_ROOT = (Resolve-Path -LiteralPath $CodexDataRoot).Path
+    $env:WORK_CONVERSATION_FILE_CONFIG = Join-Path $runtimeRoot 'local-files.json'
     $env:TEMP = $dataDir
     $env:TMP = $dataDir
 
@@ -163,6 +165,7 @@ try {
 }
 finally {
     $env:CODEX_CONVERSATION_ROOT = $previousRoot
+    $env:WORK_CONVERSATION_FILE_CONFIG = $previousFileConfig
     $env:TEMP = $previousTemp
     $env:TMP = $previousTmp
     if ($secureKey) { $secureKey.Dispose() }
