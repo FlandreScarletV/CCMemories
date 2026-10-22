@@ -128,8 +128,7 @@ $codexDataRoot = Read-Host '请输入 Codex 数据目录'
 
 ## ⚖️ 开源说明
 
-Work Conversation 是一个第三方开源项目。不是 OpenAI 官方产品。
-项目根据 MIT License 发布。
+**CCMemories** 项目根据 MIT License 发布。
 ```
 Copyright (c) 2026 FlandreScarletV
 ```
