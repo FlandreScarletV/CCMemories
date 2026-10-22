@@ -28,7 +28,7 @@
 
 `session_index.jsonl`
 
-Work Conversation 会从这些数据中查找、搜索和读取工作会话。
+CCMemories 会从这些数据中查找、搜索和读取工作会话。
 
 ### 3.🔗 连接 ChatGPT
 
@@ -42,7 +42,7 @@ Work Conversation 会从这些数据中查找、搜索和读取工作会话。
 连接成功后，建议先进行一次简单测试，例如：
 
 ```
-@Work Conversation 列出我最近的工作会话。如果没读取到则直接回复读取失败或无法读取。
+@CCMemories 列出我最近的工作会话。如果没读取到则直接回复读取失败或无法读取。
 ```
 
 
@@ -103,7 +103,7 @@ $codexDataRoot = Read-Host '请输入 Codex 数据目录'
 配置完成tunnel后，运行 `start-work-background.ps1`。
 
 该脚本会在后台启动：
-- Work Conversation MCP
+- CCMemories MCP
 - Tunnel
 - 后台守护进程
 如果 Tunnel 意外退出，守护进程会尝试自动恢复。
