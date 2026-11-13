@@ -171,7 +171,7 @@ const tools = [
 
 export async function handle({ method, params = {} }) {
   if (method === 'initialize') return { protocolVersion: '2024-11-05', capabilities: { tools: {} },
-    serverInfo: { name: 'work-conversation', version: '0.2.0' } };
+    serverInfo: { name: 'work-conversation', version: '0.2.1' } };
   if (method === 'ping') return {};
   if (method === 'tools/list') return { tools };
   if (method !== 'tools/call') throw fault('Unsupported method', -32601);

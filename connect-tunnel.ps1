@@ -22,7 +22,7 @@ if ($CheckOnly -and ($ReplaceSavedKey -or $DoctorOnly)) {
 }
 
 if (Test-Path -LiteralPath $settingsFile -PathType Leaf) {
-    $settings = Get-Content -LiteralPath $settingsFile -Raw | ConvertFrom-Json
+    $settings = Get-Content -LiteralPath $settingsFile -Raw -Encoding UTF8 | ConvertFrom-Json
     if (-not $TunnelClient) { $TunnelClient = $settings.tunnelClient }
     if (-not $CodexDataRoot) { $CodexDataRoot = $settings.codexDataRoot }
 }
@@ -43,8 +43,13 @@ if (-not $CodexDataRoot -or -not (Test-Path -LiteralPath (Join-Path $CodexDataRo
 
 & $node.Source --check $entry
 if ($LASTEXITCODE -ne 0) { throw 'MCP server syntax check failed.' }
-& $TunnelClient --version
+$clientVersionOutput = & $TunnelClient --version
 if ($LASTEXITCODE -ne 0) { throw 'tunnel-client is unavailable.' }
+$versionMatch = [regex]::Match(($clientVersionOutput -join ' '), 'v?(\d+\.\d+\.\d+)')
+if (-not $versionMatch.Success -or [version]$versionMatch.Groups[1].Value -lt [version]'0.0.20') {
+    throw 'CCMemories requires tunnel-client v0.0.20 or later for stdio child recovery. Pass the upgraded executable with -TunnelClient.'
+}
+Write-Host $clientVersionOutput
 Write-Host "Tunnel client: $TunnelClient"
 Write-Host "Codex data: $CodexDataRoot"
 if ($CheckOnly) {
@@ -58,11 +63,20 @@ if (-not (Test-Path -LiteralPath $profile)) {
     if (-not $TunnelId) { $TunnelId = Read-Host 'Enter the NEW Work Conversation Tunnel ID (not an API key)' }
     if ($TunnelId -notmatch '^tunnel_[A-Za-z0-9_-]{10,}$') { throw 'Invalid Tunnel ID.' }
     $nodePath = $node.Source.Replace('\', '/')
-    $entryPath = $entry.Replace('\', '/')
+    $entryPath = (Join-Path $pluginRoot 'run-server.mjs').Replace('\', '/')
     $command = '"' + $nodePath + '" "' + $entryPath + '"'
     & $TunnelClient init --sample sample_mcp_stdio_local --profile $profileName --profile-dir $profileDir --tunnel-id $TunnelId --mcp-command $command --health-listen-addr '127.0.0.1:0'
     if ($LASTEXITCODE -ne 0) { throw 'Tunnel profile initialization failed.' }
 }
+
+# Existing profiles keep their Tunnel and authentication settings during upgrades.
+$command = '"' + $node.Source.Replace('\', '/') + '" "' + (Join-Path $pluginRoot 'run-server.mjs').Replace('\', '/') + '"'
+$profileText = [IO.File]::ReadAllText($profile, [Text.Encoding]::UTF8)
+$pattern = '(?m)^(\s+command:\s*)[^\r\n]*'
+if ([regex]::Matches($profileText, $pattern).Count -ne 1) { throw 'Expected one MCP command in the profile.' }
+$encodedCommand = ConvertTo-Json -InputObject $command -Compress
+$updatedProfile = [regex]::Replace($profileText, $pattern, [Text.RegularExpressions.MatchEvaluator]{param($match) $match.Groups[1].Value + $encodedCommand})
+if ($updatedProfile -cne $profileText) { [IO.File]::WriteAllText($profile, $updatedProfile, [Text.UTF8Encoding]::new($false)) }
 
 $previousRoot = $env:CODEX_CONVERSATION_ROOT
 $previousFileConfig = $env:WORK_CONVERSATION_FILE_CONFIG
